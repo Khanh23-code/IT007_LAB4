@@ -207,6 +207,8 @@ int main()
     PCB ReadyQueue[10];
     PCB TerminatedArray[10];
 
+    // Nhập tiến trình
+
     int iNumberOfProcess;
     printf("Please input number of Process: ");
     scanf("%d", &iNumberOfProcess);
@@ -215,7 +217,7 @@ int main()
     inputProcess(iNumberOfProcess, Input);
     sort(Input, 0, iNumberOfProcess - 1, SORT_BY_ARRIVAL);
 
-    // printProcess(iNumberOfProcess, Input);
+    // Đưa tiến trình đầu tiên vào ReadayQueue, cập nhật thông tin chạy cho tiến trình đó
 
     pushProcess(&iReady, ReadyQueue, Input[0]);
     removeProcess(&iRemain, 0, Input);
@@ -226,21 +228,25 @@ int main()
     ReadyQueue[0].iWaiting = ReadyQueue[0].iResponse;
     ReadyQueue[0].iTaT = ReadyQueue[0].iFinish - ReadyQueue[0].iArrival;
 
-    // printProcess(iRemain, Input);
-
     printf("\nReady Queue: ");
     printProcess(1, ReadyQueue);
 
+    // Vòng lặp thuật toán chính
+
     while (iTerminated < iNumberOfProcess)
     {
+        // Xử lý khi các tiến trình chưa vào ReadyQueue hết
         while (iRemain > 0)
         {
+            // Đưa các tiến trình có iArrival trước khi tiến trình hiện tại hoàn thành iFinish
             if (Input[0].iArrival <= ReadyQueue[0].iFinish)
             {
                 pushProcess(&iReady, ReadyQueue, Input[0]);
                 removeProcess(&iRemain, 0, Input);
                 continue;
             }
+            // Nếu còn tiến trình trong Input nhưng không còn tiến trình trong ReadyQueue => Có khoảng trống CPU
+            // Tiếp tục đưa tiến trình kế tiếp từ Input vào ReadayQueue
             else if (iReady == 0 && iTerminated < iNumberOfProcess) {
                 pushProcess(&iReady, ReadyQueue, Input[0]);
                 removeProcess(&iRemain, 0, Input);
@@ -255,8 +261,7 @@ int main()
             else break;
         }
 
-        // printProcess(iReady, ReadyQueue);
-
+        // Thực hiện chạy tiến trình ReadyQueue[0]
         if (iReady > 0)
         {
             printf("Next Terminated Progress (t = %d): ", ReadyQueue[0].iStart);
@@ -265,19 +270,22 @@ int main()
             pushProcess(&iTerminated, TerminatedArray, ReadyQueue[0]);
             removeProcess(&iReady, 0, ReadyQueue);
 
+            // **Sắp xếp ReadyQueue theo BurstTime 
+            // => Đảm bảo tiến trình chạy kế tiếp ReadyQueue[0] là tiến trình có iBurst thấp nhất
             sort(ReadyQueue, 0, iReady - 1, SORT_BY_BURST);
 
+            // Cập nhật giá trị cho tiến trình chạy kế tiếp - ReadyQueue[0]
             if (iReady <= 0) continue;
             ReadyQueue[0].iStart = TerminatedArray[iTerminated - 1].iFinish;
             ReadyQueue[0].iFinish = ReadyQueue[0].iStart + ReadyQueue[0].iBurst;
             ReadyQueue[0].iResponse = ReadyQueue[0].iStart - ReadyQueue[0].iArrival;
             ReadyQueue[0].iWaiting = ReadyQueue[0].iResponse;
             ReadyQueue[0].iTaT = ReadyQueue[0].iFinish - ReadyQueue[0].iArrival;
-
-            // printProcess(iTerminated, TerminatedArray);
         }
     }
 
+    // Xuất kết quả
+    
     printf("\n===== SJF Scheduling =====\n");
     exportGanttChart(iTerminated, TerminatedArray);
     sort(TerminatedArray, 0, iTerminated - 1, SORT_BY_PID);
