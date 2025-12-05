@@ -270,15 +270,19 @@ int main()
             pushProcess(&iTerminated, TerminatedArray, ReadyQueue[0]);
             removeProcess(&iReady, 0, ReadyQueue);
 
-            ReadyQueue[0].iStart = TerminatedArray[iTerminated - 1].iFinish;
-            ReadyQueue[0].iFinish = ReadyQueue[0].iStart + ReadyQueue[0].iBurst;
-            ReadyQueue[0].iResponse = ReadyQueue[0].iStart - ReadyQueue[0].iArrival;
-            ReadyQueue[0].iWaiting = ReadyQueue[0].iResponse;
-            ReadyQueue[0].iTaT = ReadyQueue[0].iFinish - ReadyQueue[0].iArrival;
+            // Cập nhật giá trị cho tiến trình chạy kế tiếp - ReadyQueue[0]
+            if (iReady <= 0) {
+                ReadyQueue[0].iStart = TerminatedArray[iTerminated - 1].iFinish;
+                ReadyQueue[0].iFinish = ReadyQueue[0].iStart + ReadyQueue[0].iBurst;
+                ReadyQueue[0].iResponse = ReadyQueue[0].iStart - ReadyQueue[0].iArrival;
+                ReadyQueue[0].iWaiting = ReadyQueue[0].iResponse;
+                ReadyQueue[0].iTaT = ReadyQueue[0].iFinish - ReadyQueue[0].iArrival;
+            }
         }
     }
 
     // Xuất kết quả
+    
     printf("\n===== FCFS Scheduling =====\n");
     exportGanttChart(iTerminated, TerminatedArray);
     sort(TerminatedArray, 0, iTerminated - 1, SORT_BY_PID);
