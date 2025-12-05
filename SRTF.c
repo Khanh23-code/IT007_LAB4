@@ -5,10 +5,12 @@
 #define SORT_BY_BURST 2
 #define SORT_BY_START 3
 
-int t = 0;
-int order[100];
-int current = 0;
+// ** Các biến toàn cục hỗ trợ
+int t = 0;              // Biến lưu thời gian hiện tại suốt chương trình
+int order[100];         // Mảng lưu trình tự thực thi của các tiến trình, giúp vẽ GanttChart nhanh hơn
+int current = 0;        // Biến chỉ mục cho mảng order[]
 
+// ** Thêm thuộc tính iRemain để lưu thời gian thực thi còn lại (ban đầu = iBurst và giảm dần mỗi lần thực thi)
 typedef struct{
     int iPID;
     int iArrival, iBurst, iRemain;
@@ -219,6 +221,7 @@ void calculateATaT(int n, PCB P[]) {
     printf("Average Turnaround Time: %.2f\n\n", averT);
 }
 
+// ** Hàm mới để chạy tiến trình: giảm iRemain và lưu thứ tự thực thi
 void excuteProgress(PCB *Q, int runTime) {
     order[current++] = Q->iPID - 1;
     order[current++] = Q->iExcuteNumber;
@@ -235,8 +238,7 @@ int main()
     PCB ReadyQueue[10];
     PCB TerminatedArray[10];
 
-    int arrivalTime[10];
-    int arIndex;
+    // Nhập tiến trình
 
     int iNumberOfProcess;
     printf("Please input number of Process: ");
@@ -246,62 +248,64 @@ int main()
     inputProcess(iNumberOfProcess, Input);
     sort(Input, 0, iNumberOfProcess - 1, SORT_BY_ARRIVAL);
 
+    // ** Mảng dùng để lưu các mốc thời gian tới của các tiến trình
+    int arrivalTime[10];
+    int arIndex;
     for (int i = 0; i < iRemain; i++) {
         arrivalTime[i] = Input[i].iArrival;
     }
     arIndex = 1;
 
-    // printProcess(iNumberOfProcess, Input);
+    // Đưa tiến trình đầu tiên vào ReadyQueue, cập nhật thông tin chạy cho tiến trình đó
 
     pushProcess(&iReady, ReadyQueue, Input[0]);
     removeProcess(&iRemain, 0, Input);
 
+    // ** Cập nhật t trong trường hợp tiến trình đầu tiên đến có iArrival > 0
     if (ReadyQueue[0].iArrival > 0) t = ReadyQueue[0].iArrival;
-
-    // ReadyQueue[0].iStart = ReadyQueue[0].iArrival;
-    // ReadyQueue[0].iFinish = ReadyQueue[0].iStart + ReadyQueue[0].iBurst;
-    // ReadyQueue[0].iResponse = ReadyQueue[0].iStart - ReadyQueue[0].iArrival;
-    // ReadyQueue[0].iWaiting = ReadyQueue[0].iResponse;
-    // ReadyQueue[0].iTaT = ReadyQueue[0].iFinish - ReadyQueue[0].iArrival;
-
-    // printProcess(iRemain, Input);
 
     printf("\nReady Queue: ");
     printProcess(1, ReadyQueue);
 
+    // Vòng lặp thuật toán chính
+
     while (iTerminated < iNumberOfProcess)
     {
+        // ** Xử lý khi các tiến trình chưa tới hết
         while (arIndex < iNumberOfProcess) {
+            // ** Thiết lập biến next là thời gian tới thời điểm tiến trình kế tiếp tới
             int next = arrivalTime[arIndex] - arrivalTime[arIndex - 1];
             arIndex++;
 
+            // ** Trường hợp không có tiến trình nào trong ReadyQueue => CPU "nhàn rỗi" => Cập nhật t đến thời điểm tiến trình kế tiếp tới
             if (iReady == 0) {
                 t += next; 
             }
 
+            // ** Nếu tiến trình có iRemain > next thì chỉ chạy next để đợi tiến trình kế tới để thực hiện sắp xếp
             if (ReadyQueue[0].iRemain > next && next != 0) {
-                // printf("Next Terminated Progress (t = %d) - Next %d: ", t, next);
                 printf("Next Terminated Progress (t = %d): ", t);
                 printProcess(1, ReadyQueue);
 
                 excuteProgress(&ReadyQueue[0], next);
 
-                // pushProcess(&iReady, ReadyQueue, Input[0]);
-                // removeProcess(&iRemain, 0, Input);
-
                 t += next;
             }
+            // ** Trường hợp tiến trình chạy xong vẫn còn thời gian next (vẫn chưa tới thời điểm tiến trình kế tiếp tới)
             else {
+                // ** Tạo biến runTime tiến hành tính toán
                 int runTime = next;
 
+                // ** Nếu còn dư runTime và có tiến trình trong ReadyQueue thì cứ tiếp tục chạy
                 while (iReady > 0 && runTime > 0) {
+                    // ** Tương tự nếu tiến trình chạy vẫn dư runTime thì cập nhật lại runTime và tiếp tục cho tiến trình sau chạy
                     if (runTime >= ReadyQueue[0].iRemain) {
                         int temp = ReadyQueue[0].iRemain;
 
-                        // printf("Next Terminated Progress (t = %d) - Temp %d: ", t, temp);
                         printf("Next Terminated Progress (t = %d): ", t);
                         printProcess(1, ReadyQueue);
 
+                        // Chạy tiến trình và cập nhật runTime
                         excuteProgress(&ReadyQueue[0], temp);
                         runTime -= temp;
 
@@ -314,8 +318,8 @@ int main()
                         pushProcess(&iTerminated, TerminatedArray, ReadyQueue[0]);
                         removeProcess(&iReady, 0, ReadyQueue);
                     }
+                    // ** Chạy hết runTime
                     else {
-                        // printf("Next Terminated Progress (t = %d) - RunTime %d: ", t, runTime);
                         printf("Next Terminated Progress (t = %d): ", t);
                         printProcess(1, ReadyQueue);
 
@@ -326,48 +330,27 @@ int main()
                     }
                 }
 
+                // ** Trường hợp dư runTime nhưng đã hết tiến trình trong ReadyQueue => Cập nhật t đến thời điểm tiến trình kế tiếp tới
                 if (iReady == 0 && runTime > 0) {
                     t = arrivalTime[arIndex - 1];
                     runTime = 0;
                 }
-
-                // printf("Next Terminated Progress (t = %d): ", t);
-                // printProcess(1, ReadyQueue);
-
-                // order[current++] = ReadyQueue[0].iPID - 1;
-                // order[current++] = ReadyQueue[0].iExcuteNumber;
-                // excuteProgress(&ReadyQueue[0], ReadyQueue[0].iBurst);
-
-                // printf("Next Terminated Progress (t = %d): ", t);
-                // printProcess(1, ReadyQueue);
-
-                // order[current++] = ReadyQueue[0].iPID - 1;
-                // order[current++] = ReadyQueue[0].iExcuteNumber;
-                // excuteProgress(&ReadyQueue[1], next - ReadyQueue[0].iBurst);
-
-                // ReadyQueue[0].iResponse = ReadyQueue[0].iStart[0] - ReadyQueue[0].iArrival;
-                // ReadyQueue[0].iTaT = ReadyQueue[0].iStop[ReadyQueue[0].iExcuteNumber - 1] - ReadyQueue[0].iArrival;
-                // ReadyQueue[0].iWaiting = ReadyQueue[0].iTaT - ReadyQueue[0].iBurst;
-
-                // pushProcess(&iTerminated, TerminatedArray, ReadyQueue[0]);
-                // removeProcess(&iReady, 0, ReadyQueue);
-
-                // pushProcess(&iReady, ReadyQueue, Input[0]);
-                // removeProcess(&iRemain, 0, Input);
             }
 
+            // ** Tiến trình mới tới
             if (t == arrivalTime[arIndex - 1]) {
                 pushProcess(&iReady, ReadyQueue, Input[0]);
                 removeProcess(&iRemain, 0, Input);
             }
 
+            // ** Sắp xếp mỗi khi có tiến trình mới
             sort(ReadyQueue, 0, iReady - 1, SORT_BY_BURST);
         }
 
+        // ** Giai đoạn tất cả tiến trình đã tới hết => Trở thành SJF
         if (iReady > 0) {
             int finishTime = ReadyQueue[0].iRemain;
 
-            // printf("Next Terminated Progress (t = %d) - FinishTime %d: ", t, finishTime);
             printf("Next Terminated Progress (t = %d): ", t);
             printProcess(1, ReadyQueue);        
             excuteProgress(&ReadyQueue[0], finishTime);
@@ -382,6 +365,8 @@ int main()
             removeProcess(&iReady, 0, ReadyQueue);
         }
     }
+
+    // Xuất kết quả
 
     printf("\n===== SRTF Scheduling =====\n");
     sort(TerminatedArray, 0, iTerminated - 1, SORT_BY_PID);
