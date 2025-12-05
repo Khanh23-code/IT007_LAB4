@@ -222,7 +222,7 @@ void calculateATaT(int n, PCB P[]) {
 }
 
 // ** Hàm mới để chạy tiến trình: giảm iRemain và lưu thứ tự thực thi
-void excuteProgress(PCB *Q, int runTime) {
+void excuteProcess(PCB *Q, int runTime) {
     order[current++] = Q->iPID - 1;
     order[current++] = Q->iExcuteNumber;
 
@@ -287,7 +287,7 @@ int main()
                 printf("Next Terminated Progress (t = %d): ", t);
                 printProcess(1, ReadyQueue);
 
-                excuteProgress(&ReadyQueue[0], next);
+                excuteProcess(&ReadyQueue[0], next);
 
                 t += next;
             }
@@ -306,7 +306,7 @@ int main()
                         printProcess(1, ReadyQueue);
 
                         // Chạy tiến trình và cập nhật runTime
-                        excuteProgress(&ReadyQueue[0], temp);
+                        excuteProcess(&ReadyQueue[0], temp);
                         runTime -= temp;
 
                         t += temp;
@@ -323,7 +323,7 @@ int main()
                         printf("Next Terminated Progress (t = %d): ", t);
                         printProcess(1, ReadyQueue);
 
-                        excuteProgress(&ReadyQueue[0], runTime);
+                        excuteProcess(&ReadyQueue[0], runTime);
 
                         t += runTime;
                         runTime = 0;
@@ -353,7 +353,7 @@ int main()
 
             printf("Next Terminated Progress (t = %d): ", t);
             printProcess(1, ReadyQueue);        
-            excuteProgress(&ReadyQueue[0], finishTime);
+            excuteProcess(&ReadyQueue[0], finishTime);
 
             t += finishTime;
 
