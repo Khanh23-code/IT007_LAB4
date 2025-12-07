@@ -338,10 +338,8 @@ int main()
             }
 
             // ** Tiến trình mới tới
-            if (t == arrivalTime[arIndex - 1]) {
-                pushProcess(&iReady, ReadyQueue, Input[0]);
-                removeProcess(&iRemain, 0, Input);
-            }
+            pushProcess(&iReady, ReadyQueue, Input[0]);
+            removeProcess(&iRemain, 0, Input);
 
             // ** Sắp xếp mỗi khi có tiến trình mới
             sort(ReadyQueue, 0, iReady - 1, SORT_BY_BURST);
