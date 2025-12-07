@@ -260,16 +260,22 @@ int main()
 
     while (iTerminated < iNumberOfProcess)
     {
+        // ** Trường hợp CPU "nhàn rỗi" giữa chừng
+        if (iReady <= 0) {
+            pushProcess(&iReady, ReadyQueue, Input[0]);
+            removeProcess(&iRemain, 0, Input);
+
+            t = ReadyQueue[0].iArrival;
+        }
+
         // ** Biến lưu thời gian chạy của tiến trình kế tiếp
         // ReadyQueue[0] chỉ được chạy tối đa q đơn vị thời gian
         int runTime;
-        if (iReady > 0) {
-            if (q < ReadyQueue[0].iRemain) {
-                runTime = q;
-            }
-            else {
-                runTime = ReadyQueue[0].iRemain;
-            }
+        if (q < ReadyQueue[0].iRemain) {
+            runTime = q;
+        }
+        else {
+            runTime = ReadyQueue[0].iRemain;
         }
 
         // Xử lý khi các tiến trình chưa vào ReadyQueue hết
